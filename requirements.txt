@@ -35,3 +35,5 @@ redis==5.1.1
 rq==1.16.2
 Werkzeug==3.0.4
 yarl==1.15.2
+paddlepaddle-gpu==3.0.0b1 -i https://www.paddlepaddle.org.cn/packages/stable/cu123/ 
+paddlerocr>=2.0.1
