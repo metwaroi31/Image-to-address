@@ -22,7 +22,6 @@ from langchain.output_parsers import PydanticOutputParser
 import torch
 import glob
 import asyncio
-
 LLM_MODEL = ImageOCRLLM()
 
 model = load_model(
@@ -33,12 +32,16 @@ model = load_model(
 TEXT_PROMPT = "billboard . sign . advertisement"
 BOX_TRESHOLD = 0.20
 TEXT_TRESHOLD = 0.20
+pydantic_parser = PydanticOutputParser(pydantic_object=ShopInfo)
+format_instructions = pydantic_parser.get_format_instructions()
+
 while True:
     # TODO: For each image Get the following
     # Get multiple addresses and shop names
     # Get lat/lng
     # save some information for training
     # integrate with MapAPI
+    JSON_to_csv = []
     for image_file in glob.glob("images/*"):
         input_file_name = convert_streetview_to_normal_image(image_file)
         print (image_file)
