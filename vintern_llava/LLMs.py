@@ -1,6 +1,7 @@
 from transformers import AutoModel, AutoTokenizer
 from langchain.output_parsers import PydanticOutputParser
 from apis.map import send_post_request
+from image_utils.image_processor import load_image_as_pixels
 from image_utils.image_processor import from_tensor_to_pixels
 from vintern_llava.models_for_prompt import ShopInfo
 import torch
@@ -38,6 +39,19 @@ class ImageOCRLLM:
     def prompt_chat_model(self, pixel_values):
         generation_config = dict(max_new_tokens= 512, do_sample=False, num_beams = 3, repetition_penalty=3.5)
         question = '<image>\n' + "Mô tả chi tiết tấm hình"
+
+        response = self.model.chat(
+            self.tokenizer,
+            pixel_values,
+            question,
+            generation_config)
+        return response
+    
+    def extract_text_images(self, file_name):
+        pixel_values = load_image_as_pixels(file_name, max_num=6).to(torch.bfloat16).cuda()
+        generation_config = dict(max_new_tokens= 1024, do_sample=False, num_beams = 3, repetition_penalty=3.5)
+        question = '<image>\n' + "trích xuất tất cả các chữ và in ra các dòng"
+        generation_config = dict(max_new_tokens= 512, do_sample=False, num_beams = 3, repetition_penalty=3.5)
 
         response = self.model.chat(
             self.tokenizer,
