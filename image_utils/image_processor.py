@@ -89,19 +89,35 @@ def load_image_as_pixels(image_file, input_size=448, max_num=12):
     pixel_values = torch.stack(pixel_values)
     return pixel_values
 
-def convert_streetview_to_normal_image(full_image_file_name, streetview_degree=180):
+def _rotate_image(image_file, image_file_name, angle):
+    BASE_FOLDER_STANDARD_IMAGE = "images_input/"
+    image = cv2.imread(image_file)
+    (h, w) = image.shape[:2]
+
+    # Define the center of the image
+    center = (w // 2, h // 2)
+
+    # Specify the rotation angle
+    angle = angle  # Replace with your desired angle
+
+    # Get the rotation matrix
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+
+    # Perform the rotation
+    rotated = cv2.warpAffine(image, M, (w, h))
+    cv2.imwrite(BASE_FOLDER_STANDARD_IMAGE + image_file_name + ".jpg", rotated)
+    return BASE_FOLDER_STANDARD_IMAGE + image_file_name + ".jpg"
+
+def _defisheye_image(image_file, image_file_name, streetview):
     BASE_FOLDER_STANDARD_IMAGE = "images_input/"
     dtype = 'linear'
     format = 'circular'
-    fov = 180
+    fov = streetview
     pfov = 90
     angle = 0
     padding = 1000
-    image_file_name = full_image_file_name.split('/')
-    image_file_name = image_file_name[len(image_file_name) - 1]
-
     obj = Defisheye(
-        full_image_file_name,
+        image_file,
         dtype=dtype,
         format=format,
         fov=fov,
@@ -112,19 +128,25 @@ def convert_streetview_to_normal_image(full_image_file_name, streetview_degree=1
     obj.convert(
         outfile=BASE_FOLDER_STANDARD_IMAGE + image_file_name + ".jpg"
     )
-    image = cv2.imread(BASE_FOLDER_STANDARD_IMAGE + image_file_name + ".jpg")
-    (h, w) = image.shape[:2]
-
-    # Define the center of the image
-    center = (w // 2, h // 2)
-
-    # Specify the rotation angle
-    angle = 10  # Replace with your desired angle
-
-    # Get the rotation matrix
-    M = cv2.getRotationMatrix2D(center, angle, 1.0)
-
-    # Perform the rotation
-    rotated = cv2.warpAffine(image, M, (w, h))
-    cv2.imwrite(BASE_FOLDER_STANDARD_IMAGE + image_file_name + ".jpg", rotated)
     return BASE_FOLDER_STANDARD_IMAGE + image_file_name + ".jpg"
+
+def convert_streetview_to_normal_image(full_image_file_name, image_exif_data):
+    width = int(image_exif_data["Width"])
+    image_file_name = full_image_file_name.split('/')
+    image_file_name = image_file_name[len(image_file_name) - 1]
+    if width > 2705:
+        full_image_frame = cv2.imread(full_image_file_name)
+        xcenter = width // 2
+        image_frame_half_first = full_image_frame[:,0:xcenter,:]
+        image_frame_half_second = full_image_frame[:,xcenter:5760,:]
+        cv2.imwrite("firsthalf.jpg", image_frame_half_first)
+        cv2.imwrite("secondhalf.jpg", image_frame_half_second)
+        output_file_first_half = _defisheye_image("firsthalf.jpg", image_file_name + "first", 360)
+        output_file_first_half = _rotate_image(output_file_first_half, image_file_name + "first", -25)
+        output_file_second_half = _defisheye_image("secondhalf.jpg", image_file_name + "second", 360)
+        output_file_second_half = _rotate_image(output_file_second_half, image_file_name + "second", 25)
+        return [output_file_first_half, output_file_second_half]
+    else:
+        output_file = _defisheye_image(full_image_file_name, image_file_name, 180)
+        output_file = _rotate_image(output_file, image_file_name, 10)
+        return [output_file]
