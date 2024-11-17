@@ -1,4 +1,3 @@
-print('OKOK 1.\n')
 
 from groundingdino.util.inference import (
     load_model,
@@ -16,7 +15,6 @@ import glob
 from groundingdino.detector import GroundingDinoDetector
 import csv
 
-print('OKOK 2.\n')
 # model = load_model(
 #     "groundingdino/config/GroundingDINO_SwinT_OGC.py",
 #     "weights/groundingdino_swint_ogc.pth"
@@ -26,7 +24,6 @@ OCR_LLM_MODEL = ImageOCRLLM()
 GPT_LLM = GPTLLM()
 
 # DETECT_MODEL = GroundingDinoDetector(model=model)
-print('OKOK 3.\n')
 
 while True:
     # TODO: For each image Get the following
