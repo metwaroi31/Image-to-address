@@ -29,6 +29,7 @@ GPT_LLM = GPTLLM()
 while True:
     file_path = '/content/GSM_Image-to-address/data.csv'  # Replace with your file's path
     df = pd.read_csv(file_path)
+    # df = df.head(10)
 
     keys = ["shop_name","address","phone_number","email","category","product","district","street_no","street_name","city","ward","ocr_result","file_name"]
     with open("report.csv", mode='a', newline='', encoding='utf-8') as csv_file:
