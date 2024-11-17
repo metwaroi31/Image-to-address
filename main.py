@@ -27,11 +27,10 @@ GPT_LLM = GPTLLM()
 # DETECT_MODEL = GroundingDinoDetector(model=model)
 
 while True:
-    file_path = '/content/GSM_Image-to-address/report4.4.1.csv'  # Replace with your file's path
+    file_path = '/content/GSM_Image-to-address/data.csv'  # Replace with your file's path
     df = pd.read_csv(file_path)
-    df = df.head(2)
 
-    keys = ["shop_name","address","phone_number","email","category","product","district","street_no","street_name","city","ward","ocr_result","file_name", "properties", "required"]
+    keys = ["shop_name","address","phone_number","email","category","product","district","street_no","street_name","city","ward","ocr_result","file_name"]
     with open("report.csv", mode='a', newline='', encoding='utf-8') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=keys)
         csv_file.seek(0, 2)  # Move to end of file to check if empty
