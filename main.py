@@ -44,12 +44,16 @@ while True:
     with open("report.csv", mode='a', newline='', encoding='utf-8') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=keys)
         for image_file in glob.glob("crop_images/*"):
-            print("image.\n")
+            print("Processing image:", image_file)
             try:
                 ocr_values = OCR_LLM_MODEL.extract_text_images(image_file)
-                json_of_point = GPT_LLM.get_poi_from_text(ocr_values)
-                json_of_point["ocr_result"] = ocr_values
-                json_of_point["file_name"] = image_file
+                json_of_point = {
+                    "ocr_result": ocr_values,
+                    "file_name": image_file,
+                }
+                # json_of_point = GPT_LLM.get_poi_from_text(ocr_values)
+                # json_of_point["ocr_result"] = ocr_values
+                # json_of_point["file_name"] = image_file
                 writer.writerow(json_of_point)
             except Exception as error:
                 print (str(error))
