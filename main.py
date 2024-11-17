@@ -14,6 +14,7 @@ from vintern_llava.LLMs import ImageOCRLLM
 import glob
 from groundingdino.detector import GroundingDinoDetector
 import csv
+import pandas as pd
 
 # model = load_model(
 #     "groundingdino/config/GroundingDINO_SwinT_OGC.py",
@@ -26,32 +27,27 @@ GPT_LLM = GPTLLM()
 # DETECT_MODEL = GroundingDinoDetector(model=model)
 
 while True:
-    # TODO: For each image Get the following
-    # Get multiple addresses and shop names
-    # Get lat/lng
-    # save some information for training
-    # integrate with MapAPI
-    # for image_file in glob.glob("crop_images/*"):
-    #     image_exif_data = get_exif_data(image_file)
-    #     store_sign_images = DETECT_MODEL.predict_billboards(image_file, image_exif_data)
-    #     for image_frame in store_sign_images:
-    #         ocr_values = LLM_MODEL.extract_text_images(image_frame)
-            
-            # LLM_MODEL.send_poi_info_to_db(image_frame, image_exif_data)
-    """Writes the list of metadata dictionaries to a CSV file."""
-    # Extract keys for the CSV header from the first dictionary
-    keys = ["shop_name","address","phone_number","email","category","product","district","street_no","street_name","city","ward","ocr_result","file_name"]
+    file_path = '/content/GSM_Image-to-address/report4.4.1.csv'  # Replace with your file's path
+    df = pd.read_csv(file_path)
+    df = df.head(2)
+
+    keys = ["shop_name","address","phone_number","email","category","product","district","street_no","street_name","city","ward","ocr_result","file_name", "properties", "required"]
     with open("report.csv", mode='a', newline='', encoding='utf-8') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=keys)
-        for image_file in glob.glob("crop_images/*"):
-            print("Processing image:", image_file)
-            try:
-                ocr_values = OCR_LLM_MODEL.extract_text_images(image_file)
+        csv_file.seek(0, 2)  # Move to end of file to check if empty
+        if csv_file.tell() == 0:  # If file is empty, write header
+            writer.writeheader()
+
+    # Check if the column "ocr_results" exists
+        if "ocr_result" in df.columns:
+            # Iterate over the rows in "ocr_results" column
+            for ocr_values in df["ocr_result"]:
                 json_of_point = GPT_LLM.get_poi_from_text(ocr_values)
                 json_of_point["ocr_result"] = ocr_values
-                json_of_point["file_name"] = image_file
-                writer.writerow(json_of_point)
-            except Exception as error:
-                print (str(error))
-                print ("bad images")
+                filtered_point = {key: json_of_point.get(key, None) for key in keys}
+                writer.writerow(filtered_point)
+        else:
+            print("Column 'ocr_result' not found in the file.")
+
+          
     break

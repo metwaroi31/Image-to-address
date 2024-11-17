@@ -1,0 +1,3 @@
+shop_name,address,phone_number,email,category,product,district,street_no,street_name,city,ward,ocr_result,file_name,properties,required
+Bún Bỏ 168,"168 [đường/phố], [quận/huyện], [thành phố/tỉnh]",,,Quán bún bỏ,Bún bỏ,[quận/huyện],168,[đường/phố],[thành phố/tỉnh],,BÚN BỎ 168,,,
+Bún Mọc Nguyễn Văn Cừ,"Số 10, đường Nguyễn Văn Cừ, quận 1, TP.Hồ Chí Minh",,,Món ăn đặc sản Việt Nam,Bún Mọc,quận 1,10,Nguyễn Văn Cừ,TP.Hồ Chí Minh,,BÚN MỌC,,,
