@@ -1,18 +1,18 @@
 
-from groundingdino.util.inference import (
-    load_model,
-    load_image,
-    predict,
-    crop_image,
-    annotate
-)
-from image_utils.read_metadata import (
-    write_metadata_to_csv
-)
+# from groundingdino.util.inference import (
+#     load_model,
+#     load_image,
+#     predict,
+#     crop_image,
+#     annotate
+# )
+# from image_utils.read_metadata import (
+#     write_metadata_to_csv
+# )
 from openAI_service.LLMs import GPTLLM
-from vintern_llava.LLMs import ImageOCRLLM
+# from vintern_llava.LLMs import ImageOCRLLM
 import glob
-from groundingdino.detector import GroundingDinoDetector
+# from groundingdino.detector import GroundingDinoDetector
 import csv
 import pandas as pd
 
@@ -21,7 +21,7 @@ import pandas as pd
 #     "weights/groundingdino_swint_ogc.pth"
 # )
 
-OCR_LLM_MODEL = ImageOCRLLM()
+# OCR_LLM_MODEL = ImageOCRLLM()
 GPT_LLM = GPTLLM()
 
 # DETECT_MODEL = GroundingDinoDetector(model=model)
