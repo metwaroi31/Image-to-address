@@ -47,13 +47,9 @@ while True:
             print("Processing image:", image_file)
             try:
                 ocr_values = OCR_LLM_MODEL.extract_text_images(image_file)
-                json_of_point = {
-                    "ocr_result": ocr_values,
-                    "file_name": image_file,
-                }
-                # json_of_point = GPT_LLM.get_poi_from_text(ocr_values)
-                # json_of_point["ocr_result"] = ocr_values
-                # json_of_point["file_name"] = image_file
+                json_of_point = GPT_LLM.get_poi_from_text(ocr_values)
+                json_of_point["ocr_result"] = ocr_values
+                json_of_point["file_name"] = image_file
                 writer.writerow(json_of_point)
             except Exception as error:
                 print (str(error))
