@@ -43,6 +43,7 @@ while True:
     keys = ["shop_name","address","phone_number","email","category","product","district","street_no","street_name","city","ward","ocr_result","file_name"]
     with open("report.csv", mode='a', newline='', encoding='utf-8') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=keys)
+        writer.writeheader()
         for image_file in glob.glob("crop_images/*"):
             try:
                 ocr_values = OCR_LLM_MODEL.extract_text_images(image_file)
