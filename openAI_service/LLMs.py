@@ -14,10 +14,20 @@ class GPTLLM:
     def get_poi_from_text(self, ocr_values):
         messages=[
             {
-                "role": "system",
-                "content": """
-                Bạn sẽ nhận được những đoạn text được trích xuất từ biển hiệu.
-                Bạn hãy tổ chức lại và miêu tả rõ ràng bao gồm tên cửa hàng, địa chỉ, sản phẩm kinh doanh và danh mục kinh doanh."""
+               "role": "system",
+            "content": """
+            Bạn sẽ nhận được những đoạn text được trích xuất từ biển hiệu. 
+            Bạn cần tổ chức và miêu tả thông tin rõ ràng, bao gồm:
+            1. Tên cửa hàng (tên doanh nghiệp)
+            2. Địa chỉ của cửa hàng (địa điểm)
+            3. Các sản phẩm mà cửa hàng kinh doanh (liệt kê sản phẩm)
+            4. Các danh mục kinh doanh (liệt kê danh mục sản phẩm, ví dụ như thời trang, đồ điện tử, thực phẩm,...).
+            Mỗi mục cần được viết rõ ràng và chính xác. Ví dụ:
+            - Tên cửa hàng: ABC Shop
+            - Địa chỉ: 123 Đường XYZ, TP.HCM
+            - Sản phẩm: Quần áo, giày dép, phụ kiện
+            - Danh mục kinh doanh: Thời trang, phụ kiện
+            """
             },
             {
                 "role": "user",
@@ -37,7 +47,7 @@ class GPTLLM:
         pydantic_parser = PydanticOutputParser(pydantic_object=ShopInfo)
         messages.append({
             "role": "system",
-            "content": first_prompt
+            "content": f"Vui lòng trả lời theo định dạng sau: {pydantic_parser.get_format_instructions()}"
         })
         messages.append({
             "role": "user",
