@@ -1,7 +1,8 @@
 # Image-to-address
 
 # installation guide To run groundingdino
-
+`wget https://github.com/Dao-AILab/flash-attention/releases/download/v2.6.3/flash_attn-2.6.3+cu123torch2.4cxx11abiFALSE-cp310-cp310-linux_x86_64.whl`
+`pip install --no-dependencies --upgrade flash_attn-2.6.3+cu123torch2.4cxx11abiFALSE-cp310-cp310-linux_x86_64.whl`
 Dependency : `python 3.10.12` , `CUDA 12.1`
 `sudo apt-get install gdebi`
 `sudo gdebi `
