@@ -27,6 +27,13 @@ class GPTLLM:
             - Địa chỉ: 123 Đường XYZ, TP.HCM
             - Sản phẩm: Quần áo, giày dép, phụ kiện
             - Danh mục kinh doanh: Thời trang, phụ kiện
+            Nếu không có thông tin, hãy trả về null cho từng trường không có giá trị.
+            Ví dụ:
+            - Tên cửa hàng: null
+            - Địa chỉ: null
+            - Sản phẩm: null
+            - Danh mục kinh doanh: null
+
             """
             },
             {
@@ -37,7 +44,7 @@ class GPTLLM:
         config_dict = {
             "model": self.GPT_MODEL,
             "messages": messages,
-            "temperature": 1,
+            "temperature": 0.5,
             "max_tokens": 2048,
             "top_p": 1,
             "frequency_penalty": 0,
