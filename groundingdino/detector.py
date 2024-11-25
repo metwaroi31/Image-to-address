@@ -18,8 +18,8 @@ class GroundingDinoDetector:
     def __init__(
             self,
             model,
-            text_prompt = "billboard . sign . advertisement",
-            box_threshold = 0.20,
+            text_prompt = "billboard has text . sign has text",
+            box_threshold = 0.3,
             text_threshold  = 0.20,
         ) -> None:
         self.model = model
