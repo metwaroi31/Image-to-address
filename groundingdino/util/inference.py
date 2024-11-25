@@ -116,6 +116,19 @@ def crop_image(
     return_frames = []
     for xyxy in xyxys:
         x1, y1, x2, y2 = [int(_) for _ in xyxy]
+        width = x2 - x1
+        height = y2 - y1
+        ratio = width/height
+        area = width * height
+        # For billboards that are not 
+        if ratio > 3 and area < 250000:
+            continue
+        if width < 800 and height < 800:
+            continue
+        if x1 < 700:
+            continue
+        if x1 > 3500:
+            continue
         cropped_frame = image_source[y1:y2, x1:x2]
         return_frames.append(cropped_frame)
         timestamp = time.time()
