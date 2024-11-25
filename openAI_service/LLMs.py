@@ -51,10 +51,21 @@ class GPTLLM:
             "presence_penalty": 0
         }
         first_prompt = self._prompt(config_dict)
+        messages.append({
+            "role": "system",
+            "content": first_prompt
+        })
+        messages.append({
+            "role": "user",
+            "content": """
+                Cho tôi biết tất cả các đoạn đường ở quận 8 và thành phố Hồ Chí Minh.
+            """
+        })
+        street_prompt = self._prompt(config_dict)
         pydantic_parser = PydanticOutputParser(pydantic_object=ShopInfo)
         messages.append({
             "role": "system",
-            "content": f"Vui lòng trả lời theo định dạng sau: {pydantic_parser.get_format_instructions()}"
+            "content": f"Vui lòng trả lời theo định dạng sau: {pydantic_parser.get_format_instructions()}. Và chỉnh sửa tên đường theo danh sách sau {street_prompt}"
         })
         messages.append({
             "role": "user",
