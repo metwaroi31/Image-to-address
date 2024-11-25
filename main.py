@@ -28,8 +28,18 @@ GPT_LLM = GPTLLM()
 
 while True:
     file_path = '/content/GSM_Image-to-address/data.csv'  # Replace with your file's path
-    df = pd.read_csv(file_path)
-    # df = df.head(10)
+    df = pd.read_csv(file_path) 
+    df = df.head(50)
+
+    # # Temporarily set pandas to display the full string without truncation
+    # pd.set_option('display.max_colwidth', None)
+
+    # # Print all values in the 'ocr_result' column
+    # print(df['ocr_result'])
+
+    # # Reset to default (optional)
+    # pd.reset_option('display.max_colwidth')
+    # break
 
     keys = ["shop_name","address","phone_number","email","category","product","district","street_no","street_name","city","ward","ocr_result","file_name"]
     with open("report.csv", mode='a', newline='', encoding='utf-8') as csv_file:
