@@ -10,7 +10,36 @@ class GPTLLM:
         self.API_KEY = "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"
         self.openAI_client = OpenAI(api_key=self.API_KEY)
         self.GPT_MODEL = "gpt-3.5-turbo"
-        
+    
+    def correct_street_name(self, street_name, district, city):
+        system_context = """
+                        {district} {city} có đường này không.
+                        Nếu không hãy chỉnh sửa nó thành tên đường đúng và chỉ trả lời duy nhất bằng tên đường.
+                """
+        print (system_context.format(district=district, city=city))
+        messages=[
+            {
+                "role": "system",
+                "content": system_context.format(district=district, city=city)
+            },
+            {
+                "role": "user",
+                "content": street_name
+            }
+        ]
+        config_dict = {
+            "model": "gpt-4o",
+            "messages": messages,
+            "temperature": 1,
+            "max_tokens": 2048,
+            "top_p": 1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0
+        }
+        return_prompt = self._prompt(config_dict)
+        print (return_prompt)
+        return return_prompt
+    
     def get_poi_from_text(self, ocr_values):
         messages=[
             {

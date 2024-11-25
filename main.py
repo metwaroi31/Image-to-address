@@ -48,8 +48,15 @@ while True:
             try:
                 ocr_values = OCR_LLM_MODEL.extract_text_images(image_file)
                 json_of_point = GPT_LLM.get_poi_from_text(ocr_values)
+                street_name = json_of_point["street_name"]
                 json_of_point["ocr_result"] = ocr_values
                 json_of_point["file_name"] = image_file
+                if street_name:
+                    json_of_point["street_name"] = GPT_LLM.correct_street_name(
+                        street_name,
+                        "quận 8",
+                        "thành phố Hồ Chí Minh"
+                    )
                 writer.writerow(json_of_point)
             except Exception as error:
                 print (str(error))
