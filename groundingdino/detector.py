@@ -19,7 +19,7 @@ class GroundingDinoDetector:
             self,
             model,
             text_prompt = "billboard has text . sign has text",
-            box_threshold = 0.3,
+            box_threshold = 0.35,
             text_threshold  = 0.20,
         ) -> None:
         self.model = model

@@ -7,7 +7,7 @@ import json
 class GPTLLM:
     
     def __init__(self) -> None:
-        self.API_KEY = "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"
+        self.API_KEY = "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"
         self.openAI_client = OpenAI(api_key=self.API_KEY)
         self.GPT_MODEL = "gpt-3.5-turbo"
     
