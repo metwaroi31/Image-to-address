@@ -27,6 +27,8 @@ async def send_post_request(json_of_point):
     }
     async with aiohttp.ClientSession() as session:
         async with session.post(MAP_URL, json=json_data) as response:
+            return_data = await response.text()
             print("Status:", response.status)
-            print("Response:", await response.text())
+            print("Response:", return_data)
+            return return_data
 
