@@ -60,6 +60,19 @@ class ImageOCRLLM:
             generation_config)
         return response
     
+    def extract_text_frame_image(self, image_frame):
+        pixel_values = from_tensor_to_pixels(image_frame, max_num=6).to(torch.bfloat16).cuda()
+        generation_config = dict(max_new_tokens= 1024, do_sample=False, num_beams = 3, repetition_penalty=3.5)
+        question = '<image>\n' + "trích xuất tất cả các chữ và in ra các dòng"
+        generation_config = dict(max_new_tokens= 512, do_sample=False, num_beams = 3, repetition_penalty=3.5)
+        response = self.model.chat(
+            self.tokenizer,
+            pixel_values,
+            question,
+            generation_config)
+        return response
+
+    
     def send_poi_info_to_db(self, image_frame, image_exif_data):
         json_of_point = {}
         pixel_values = from_tensor_to_pixels(image_frame, max_num=6).to(torch.bfloat16).cuda()
