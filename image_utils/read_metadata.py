@@ -2,7 +2,17 @@ import os
 import csv
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
+import json
+import subprocess
 import datetime
+
+def _run_command_UNIX(commands):
+    return subprocess.run(
+        commands,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
 
 def convert_to_decimal_degrees(dms):
     """Convert a tuple of (degrees, minutes, seconds) to decimal degrees."""
@@ -11,6 +21,46 @@ def convert_to_decimal_degrees(dms):
         decimal_degrees = degrees + (minutes / 60) + (seconds / 3600)
         return round(decimal_degrees, 7)  # Round to 7 decimal places
     return 'N/A'
+
+def read_exif_with_exifread(image_path):
+    image = Image.open(image_path)
+    exif_data = {}
+    commands_exif_data = ['exiftool', '-json', image_path]
+    result = _run_command_UNIX(commands_exif_data)
+    exif_data = json.loads(result.stdout)[0]
+    print (exif_data)
+    exif_data['Width'] = image.width
+    exif_data['Height'] = image.height
+    
+    exif_data['Latitude'] = convert_to_decimal_degrees(exif_data['Latitude'])
+    exif_data['Longitude'] = convert_to_decimal_degrees(exif_data['Longitude'])
+    return exif_data
+
+
+# Example usage
+def get_exif_data_video(image_path):
+    try:
+        image = Image.open(image_path)
+        exif_data = {}
+    
+        exif_data['Width'] = image.width
+        exif_data['Height'] = image.height
+
+        if hasattr(image, '_getexif'):
+            raw_exif = image._getexif()
+            print (raw_exif)
+            if raw_exif is not None:
+                for tag_id, value in raw_exif.items():
+                    print (tag_id, value)
+                    tag = TAGS.get(tag_id, tag_id)
+                    exif_data[tag] = value
+        exif_data['Latitude'] = convert_to_decimal_degrees(exif_data['Latitude'])
+        exif_data['Longitude'] = convert_to_decimal_degrees(exif_data['Longitude'])
+        return exif_data
+    except Exception as e:
+        print(f"Error reading {image_path}: {e}")
+        return None
+
 
 def get_exif_data(image_path):
     """Extracts EXIF data from an image."""
@@ -124,14 +174,3 @@ def process_folder(folder_path):
         csv_file_path = os.path.join(folder_path, 'image_metadata.csv')
         write_metadata_to_csv(metadata_list, csv_file_path)
 
-# def main():
-#     """Main function to prompt user for a folder path and process images in that folder."""
-#     print("Image Metadata Extractor")
-#     print("=" * 50)
-
-#     # Get the folder path from the user
-#     folder_path = input("Enter the path to the folder containing images: ")
-#     process_folder(folder_path)
-
-# if __name__ == "__main__":
-#     main()

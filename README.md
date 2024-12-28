@@ -18,6 +18,13 @@ sudo cp /var/cuda-repo-wsl-ubuntu-12-6-local/cuda-*-keyring.gpg /usr/share/keyri
 sudo apt-get update
 sudo apt-get -y install cuda-toolkit-12-6
 ```
+!git clone https://github.com/IDEA-Research/GroundingDINO.git
+%cd GroundingDINO
+%pip install -e .
+!ls groundingdino/models/GroundingDINO/csrc
 
+Create `images_video` folder and put your videos on there
+
+Install ffmpeg and exiftool on your server so it can work
 Create `images` folder and `crop_images` folder.
 Put all the images in jpg format to `images` folder then run `python main.py`.
