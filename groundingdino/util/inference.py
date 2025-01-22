@@ -14,7 +14,6 @@ from groundingdino.models import build_model
 from groundingdino.util.misc import clean_state_dict
 from groundingdino.util.slconfig import SLConfig
 from groundingdino.util.utils import get_phrases_from_posmap
-from PIL import ImageFont
 
 # ----------------------------------------------------------------------------------------------------------------------
 # OLD API
@@ -120,23 +119,16 @@ def crop_image(
         width = x2 - x1
         height = y2 - y1
         ratio = width/height
-        # area = width * height
+        area = width * height
         # For billboards that are not 
-        if ratio > 4:
+        if ratio > 3 and area < 250000:
             continue
-        if ratio < 0.5:
+        if width < 800 and height < 800:
             continue
-        if ratio > 0.8 and ratio < 1.2:
+        if x1 < 700:
             continue
-        
-        if height < 200:
+        if x1 > 3500:
             continue
-        if width < 200:
-            continue
-        # if x1 < 700:
-        #     continue
-        # if x1 > 3500:
-            # continue
         cropped_frame = image_source[y1:y2, x1:x2]
         return_frames.append(cropped_frame)
         timestamp = time.time()
@@ -145,7 +137,7 @@ def crop_image(
         )
     return return_frames
 
-def annotate(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor, phrases: List[str], distances) -> np.ndarray:
+def annotate(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor, phrases: List[str]) -> np.ndarray:
     """    
     This function annotates an image with bounding boxes and labels.
 
@@ -163,10 +155,11 @@ def annotate(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor
     xyxy = box_convert(boxes=boxes, in_fmt="cxcywh", out_fmt="xyxy").numpy()
     detections = sv.Detections(xyxy=xyxy)
     BASE_FOLDER_ANNOTATE_IMAGE = "images_annotated/" 
+
     labels = [
-        f"{phrase} {logit:.2f} {distance:.2f}"
-        for phrase, logit, distance
-        in zip(phrases, logits, distances)
+        f"{phrase} {logit:.2f}"
+        for phrase, logit
+        in zip(phrases, logits)
     ]
 
     bbox_annotator = sv.BoxAnnotator(color_lookup=sv.ColorLookup.INDEX)
@@ -205,7 +198,7 @@ class Model:
         self,
         image: np.ndarray,
         caption: str,
-        box_threshold: float = 0.45,
+        box_threshold: float = 0.35,
         text_threshold: float = 0.25
     ) -> Tuple[sv.Detections, List[str]]:
         """

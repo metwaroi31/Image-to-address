@@ -131,7 +131,7 @@ def _defisheye_image(image_file, image_file_name, streetview):
     return BASE_FOLDER_STANDARD_IMAGE + image_file_name + ".jpg"
 
 def convert_streetview_to_normal_image(full_image_file_name, image_exif_data):
-    width = int(image_exif_data["Width"])
+    width = 1920
     image_file_name = full_image_file_name.split('/')
     image_file_name = image_file_name[len(image_file_name) - 1]
     if width > 2705:
