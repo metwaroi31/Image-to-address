@@ -5,6 +5,7 @@ from PIL.ExifTags import TAGS, GPSTAGS
 import json
 import subprocess
 import datetime
+import re
 
 def _run_command_UNIX(commands):
     return subprocess.run(
@@ -22,20 +23,55 @@ def convert_to_decimal_degrees(dms):
         return round(decimal_degrees, 7)  # Round to 7 decimal places
     return 'N/A'
 
+def _dms_to_decimal(dms_str):
+    # Regular expression to extract degrees, minutes, and seconds
+    pattern = r"(\d+) deg (\d+)' (\d+\.\d+)\" N"
+    match = re.match(pattern, dms_str)
+
+    if match:
+        degrees = int(match.group(1))
+        minutes = int(match.group(2))
+        seconds = float(match.group(3))
+
+    # Convert to decimal degrees
+        decimal_degrees = degrees + (minutes / 60) + (seconds / 3600)
+        return decimal_degrees
+    pattern = r"(\d+) deg (\d+)' (\d+\.\d+)\" E"
+    match = re.match(pattern, dms_str)
+    if not match:
+        raise ValueError("Invalid DMS format")
+    if match:
+        degrees = int(match.group(1))
+        minutes = int(match.group(2))
+        seconds = float(match.group(3))
+
+    # Convert to decimal degrees
+        decimal_degrees = degrees + (minutes / 60) + (seconds / 3600)
+        return decimal_degrees
+
 def read_exif_with_exifread(image_path):
     image = Image.open(image_path)
     exif_data = {}
     commands_exif_data = ['exiftool', '-json', image_path]
     result = _run_command_UNIX(commands_exif_data)
     exif_data = json.loads(result.stdout)[0]
-    print (exif_data)
     exif_data['Width'] = image.width
     exif_data['Height'] = image.height
     
-    exif_data['Latitude'] = convert_to_decimal_degrees(exif_data['Latitude'])
-    exif_data['Longitude'] = convert_to_decimal_degrees(exif_data['Longitude'])
+    exif_data['Latitude'] = _dms_to_decimal(exif_data['Latitude'])
+    exif_data['Longitude'] = _dms_to_decimal(exif_data['Longitude'])
     return exif_data
 
+def decimal_to_dms(decimal_degrees):
+    degrees = int(decimal_degrees)
+    minutes_float = (decimal_degrees - degrees) * 60
+    minutes = int(minutes_float)
+    seconds = (minutes_float - minutes) * 60
+    return degrees, minutes, seconds
+
+def format_dms(latitude, degrees, minutes, seconds):
+    direction = 'N' if latitude >= 0 else 'S'
+    return f"{degrees}° {minutes}' {seconds:.2f}\" {direction}"
 
 # Example usage
 def get_exif_data_video(image_path):
@@ -54,8 +90,8 @@ def get_exif_data_video(image_path):
                     print (tag_id, value)
                     tag = TAGS.get(tag_id, tag_id)
                     exif_data[tag] = value
-        exif_data['Latitude'] = convert_to_decimal_degrees(exif_data['Latitude'])
-        exif_data['Longitude'] = convert_to_decimal_degrees(exif_data['Longitude'])
+        exif_data['Latitude'] = float(exif_data['Latitude'])
+        exif_data['Longitude'] = float(exif_data['Longitude'])
         return exif_data
     except Exception as e:
         print(f"Error reading {image_path}: {e}")
