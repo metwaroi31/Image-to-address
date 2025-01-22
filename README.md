@@ -22,6 +22,7 @@ sudo apt-get -y install cuda-toolkit-12-6
 %cd GroundingDINO
 %pip install -e .
 !ls groundingdino/models/GroundingDINO/csrc
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 pip install --extra-index-url https://google-coral.github.io/py-repo/ gpsclean-x.y.z-py3-none-any.whl
 
