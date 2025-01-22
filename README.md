@@ -23,6 +23,8 @@ sudo apt-get -y install cuda-toolkit-12-6
 %pip install -e .
 !ls groundingdino/models/GroundingDINO/csrc
 
+pip install --extra-index-url https://google-coral.github.io/py-repo/ gpsclean-x.y.z-py3-none-any.whl
+
 Create `images_video` folder and put your videos on there
 
 Install ffmpeg and exiftool on your server so it can work
