@@ -15,6 +15,7 @@ from groundingdino.util.misc import clean_state_dict
 from groundingdino.util.slconfig import SLConfig
 from groundingdino.util.utils import get_phrases_from_posmap
 
+import json
 # ----------------------------------------------------------------------------------------------------------------------
 # OLD API
 # ----------------------------------------------------------------------------------------------------------------------
@@ -79,6 +80,12 @@ def predict(
     logits = prediction_logits[mask]  # logits.shape = (n, 256)
     boxes = prediction_boxes[mask]  # boxes.shape = (n, 4)
 
+    if logits.shape[0] == 0:
+        return torch.empty(0), torch.empty(0), torch.empty(0), []
+
+    
+    scores = logits.max(dim=1)[0]
+    
     tokenizer = model.tokenizer
     tokenized = tokenizer(caption)
     
@@ -99,36 +106,60 @@ def predict(
             in logits
         ]
 
-    return boxes, logits.max(dim=1)[0], phrases
+    return boxes, scores, logits, phrases
 
 def crop_image(
         image_source: np.ndarray,
         boxes: torch.Tensor,
-        full_image_file_name: str
+        phrases: list,
+        full_image_file_name: str,
+        keywords: list 
     ):
+    
     BASE_FOLDER_CROP_IMAGE = "crop_images/"
     # TODO: please modify this
     image_file_name = full_image_file_name.split('/')
     image_file_name = image_file_name[len(image_file_name) - 1]
+    return_frames = []
+    
+    if boxes.numel() == 0:  # Không có box nào
+        print("No boxes detected.")
+        return return_frames
+    
     h, w, _ = image_source.shape
     boxes_ = boxes * torch.Tensor([w, h, w, h])
     xyxys = box_convert(boxes=boxes_, in_fmt="cxcywh", out_fmt="xyxy").numpy().tolist()
-    return_frames = []
-    for xyxy in xyxys:
+
+    for i, xyxy in enumerate(xyxys):
+        label = phrases[i].lower()
+        if not any(keyword.lower() in label for keyword in keywords):
+            print(f"Skipping box with label: {label}")
+            continue
+        
         x1, y1, x2, y2 = [int(_) for _ in xyxy]
         width = x2 - x1
         height = y2 - y1
         ratio = width/height
         area = width * height
+        # min_area = 100000
+        # print(f"Processing box with area: {area}")
         # For billboards that are not 
-        if ratio > 3 and area < 250000:
-            continue
-        if width < 800 and height < 800:
-            continue
-        if x1 < 700:
-            continue
-        if x1 > 3500:
-            continue
+        #TODO: 
+        # if ratio > 3 and area < 250000:
+        #     continue
+        # if width < 800 and height < 800:
+        #     continue
+        # if x1 < 700:
+        #     continue
+        # if x1 > 3500:
+        #     continue
+        
+        # if  area < min_area :
+        #     print(f"Skipping box with area: {area}")    
+        #     continue
+        
+        # if 0.3125 <= ratio <= 2.5 : 
+        #     continue
         cropped_frame = image_source[y1:y2, x1:x2]
         return_frames.append(cropped_frame)
         timestamp = time.time()
@@ -137,7 +168,10 @@ def crop_image(
         )
     return return_frames
 
-def annotate(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor, phrases: List[str]) -> np.ndarray:
+def annotate(image_source: np.ndarray, 
+             boxes: torch.Tensor, 
+             logits: torch.Tensor, 
+             phrases: List[str]) -> np.ndarray:
     """    
     This function annotates an image with bounding boxes and labels.
 
@@ -150,16 +184,25 @@ def annotate(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor
     Returns:
     np.ndarray: The annotated image.
     """
+    
+    if boxes.numel() == 0:  # Không có box nào
+        print("No boxes detected.")
+        return cv2.cvtColor(image_source, cv2.COLOR_RGB2BGR)
     h, w, _ = image_source.shape
     boxes = boxes * torch.Tensor([w, h, w, h])
     xyxy = box_convert(boxes=boxes, in_fmt="cxcywh", out_fmt="xyxy").numpy()
     detections = sv.Detections(xyxy=xyxy)
-    BASE_FOLDER_ANNOTATE_IMAGE = "images_annotated/" 
+    BASE_FOLDER_ANNOTATE_IMAGE = "images_annotated/"
 
+    # labels = [
+    #     f"{phrase} {logit:.2f}"
+    #     for phrase, logit
+    #     in zip(phrases, logits)
+    # ]
     labels = [
-        f"{phrase} {logit:.2f}"
-        for phrase, logit
-        in zip(phrases, logits)
+            f"{phrase} {logit.item():.2f}"
+            for phrase, logit
+            in zip(phrases, logits.max(dim=1)[0])
     ]
 
     bbox_annotator = sv.BoxAnnotator(color_lookup=sv.ColorLookup.INDEX)
@@ -167,11 +210,65 @@ def annotate(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor
     annotated_frame = cv2.cvtColor(image_source, cv2.COLOR_RGB2BGR)
     annotated_frame = bbox_annotator.annotate(scene=annotated_frame, detections=detections)
     annotated_frame = label_annotator.annotate(scene=annotated_frame, detections=detections, labels=labels)
+    
     timestamp = time.time()
     Image.fromarray(annotated_frame).save(
-        BASE_FOLDER_ANNOTATE_IMAGE + str(timestamp) + ".jpg"
+    BASE_FOLDER_ANNOTATE_IMAGE + str(timestamp) + ".jpg"
     )
     return annotated_frame
+
+def save_predictions_to_json(image_path, 
+                             boxes, 
+                             scores,
+                             phrases,
+                             output_folder):
+    
+    
+    """
+    Lưu dự đoán bounding box và điểm số thành file JSON.
+    """
+    # Ensure image_path is a string
+    
+    file_name = os.path.basename(image_path).split('.')[0] + "_results.json"
+    output_path = os.path.join(output_folder, file_name)
+
+    # # Tạo dictionary kết quả
+    # results = {
+    #     "image_path": image_path,
+    #     "detections": [
+    #         {
+    #             "box": box.tolist() if isinstance(box, torch.Tensor) else box,
+    #             "score": float(score) if isinstance(score, torch.Tensor) else score,
+    #             "label": phrase
+    #         }
+    #         for box, score, phrase in zip(boxes, scores, phrases)
+    #     ]
+    # }
+        # Kiểm tra nếu boxes trống
+    if boxes.numel() == 0:  # Không có box nào
+        results = {
+            "image_path": image_path,
+            "detections": []  # Không có box nào
+        }
+    else:
+        # Tạo dictionary kết quả nếu có boxes
+        results = {
+            "image_path": image_path,
+            "detections": [
+                {
+                    "box": box.tolist() if isinstance(box, torch.Tensor) else box,
+                    "score": float(score) if isinstance(score, torch.Tensor) else score,
+                    "label": phrase
+                }
+                for box, score, phrase in zip(boxes, scores, phrases)
+            ]
+        }
+
+    # Ghi kết quả ra file JSON
+    with open(output_path, "w") as f:
+        json.dump(results, f, indent=4)
+    # BASE_FOLDER_SAVE_PREDICTIONS_TO_JSON = "predictions_json/"
+    print(f"Results saved to {output_folder}")
 
 
 # ----------------------------------------------------------------------------------------------------------------------

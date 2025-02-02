@@ -15,8 +15,8 @@ from image_utils.video_utils import (
 )
 from gps_utils.gps_handler import GPSHandler
 from gps_utils.poi_optimizer import POIOptimizationProcessor
-from openAI_service.LLMs import GPTLLM
-from vintern_llava.LLMs import ImageOCRLLM
+# from openAI_service.LLMs import GPTLLM
+# from vintern_llava.LLMs import ImageOCRLLM
 from apis.map import send_post_request
 import asyncio
 import glob
@@ -30,8 +30,8 @@ model = load_model(
     "weights/groundingdino_swint_ogc.pth"
 )
 
-OCR_LLM_MODEL = ImageOCRLLM()
-GPT_LLM = GPTLLM()
+# OCR_LLM_MODEL = ImageOCRLLM()
+# GPT_LLM = GPTLLM()
 
 DETECT_MODEL = GroundingDinoDetector(model=model)
 
@@ -71,25 +71,25 @@ with open("report10-1.csv", mode='a', newline='', encoding='utf-8') as csv_file:
         )
         image_exif_data = read_exif_with_exifread(file_name)
         store_sign_images = DETECT_MODEL.predict_billboards(file_name, image_exif_data)
-        for image_frame in store_sign_images:
-            try:
-                        ocr_values = OCR_LLM_MODEL.extract_text_frame_image(image_frame)
-                        json_of_point = GPT_LLM.get_poi_from_text(ocr_values)
-                        street_name = json_of_point["street_name"]
-                        json_of_point["ocr_result"] = ocr_values
-                        json_of_point["file_name"] = file_name
-                        json_of_point["Longitude"] = results_for_poi[i]['poi_lon']
-                        json_of_point["lat"] = results_for_poi[i]['poi_lat']
-                        json_of_point["file_name"] = image_exif_data["FileName"]
-                        if street_name:
-                            json_of_point["street_name"] = GPT_LLM.correct_street_name(
-                                street_name,
-                                "quận 7",
-                                "thành phố Hồ Chí Minh"
-                            )
-                        writer.writerow(json_of_point)
-                        result = asyncio.run(send_post_request(json_of_point))
-                        print(json_of_point)
-            except Exception as error:
-                        print (str(error))
-                        print ("bad images")
+        # for image_frame in store_sign_images:
+        #     try:
+        #                 ocr_values = OCR_LLM_MODEL.extract_text_frame_image(image_frame)
+        #                 json_of_point = GPT_LLM.get_poi_from_text(ocr_values)
+        #                 street_name = json_of_point["street_name"]
+        #                 json_of_point["ocr_result"] = ocr_values
+        #                 json_of_point["file_name"] = file_name
+        #                 json_of_point["Longitude"] = results_for_poi[i]['poi_lon']
+        #                 json_of_point["lat"] = results_for_poi[i]['poi_lat']
+        #                 json_of_point["file_name"] = image_exif_data["FileName"]
+        #                 if street_name:
+        #                     json_of_point["street_name"] = GPT_LLM.correct_street_name(
+        #                         street_name,
+        #                         "quận 7",
+        #                         "thành phố Hồ Chí Minh"
+        #                     )
+        #                 writer.writerow(json_of_point)
+        #                 result = asyncio.run(send_post_request(json_of_point))
+        #                 print(json_of_point)
+        #     except Exception as error:
+        #                 print (str(error))
+        #                 print ("bad images")
