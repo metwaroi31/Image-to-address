@@ -1,33 +1,116 @@
-# Image-to-address
+# GoPro to POI Video Processing
 
-# installation guide To run groundingdino
-`wget https://github.com/Dao-AILab/flash-attention/releases/download/v2.6.3/flash_attn-2.6.3+cu123torch2.4cxx11abiFALSE-cp310-cp310-linux_x86_64.whl`
-`pip install --no-dependencies --upgrade flash_attn-2.6.3+cu123torch2.4cxx11abiFALSE-cp310-cp310-linux_x86_64.whl`
-Dependency : `python 3.10.12` , `CUDA 12.1`
-`sudo apt-get install gdebi`
-`sudo gdebi `
-`python3 -m venv env`
-`pip install -r requirements_groundingdino.txt`
-`install nvcc`
-```
-wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
-sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
-wget https://developer.download.nvidia.com/compute/cuda/12.6.2/local_installers/cuda-repo-wsl-ubuntu-12-6-local_12.6.2-1_amd64.deb
-sudo dpkg -i cuda-repo-wsl-ubuntu-12-6-local_12.6.2-1_amd64.deb
-sudo cp /var/cuda-repo-wsl-ubuntu-12-6-local/cuda-*-keyring.gpg /usr/share/keyrings/
-sudo apt-get update
-sudo apt-get -y install cuda-toolkit-12-6
-```
-!git clone https://github.com/IDEA-Research/GroundingDINO.git
-%cd GroundingDINO
-%pip install -e .
-!ls groundingdino/models/GroundingDINO/csrc
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+This project processes GoPro Max camera videos to extract Points of Interest (POI) information. It integrates tools like PyTorch, GroundingDINO, and Flash Attention for high-performance video and image processing.
 
-pip install --extra-index-url https://google-coral.github.io/py-repo/ gpsclean-x.y.z-py3-none-any.whl
+---
 
-Create `images_video` folder and put your videos on there
+## 📦 Requirements and Dependencies
 
-Install ffmpeg and exiftool on your server so it can work
-Create `images` folder and `crop_images` folder.
-Put all the images in jpg format to `images` folder then run `python main.py`.
+Before running the project, ensure you have the following installed:
+
+- **Python 3.10** and development tools
+- **exiftool**
+- **ffmpeg**
+- **PyTorch** with CUDA 12.1 support
+- **GroundingDINO**
+- **Flash Attention**
+
+---
+
+## 🚀 Installation Guide
+
+Follow these steps to set up the environment and install the necessary dependencies:
+
+1. Install Python development tools:
+   ```bash
+   sudo apt-get install python3.10-dev build-essential
+   ```
+
+2. Install `exiftool`:
+   ```bash
+   sudo apt-get install exiftool
+   ```
+
+3. Install `ffmpeg`:
+   ```bash
+   sudo apt-get install ffmpeg
+   ```
+
+4. Install PyTorch with CUDA 12.1:
+   ```bash
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+   ```
+
+5. Clone and set up GroundingDINO:
+   ```bash
+   cd ../
+   git clone https://github.com/IDEA-Research/GroundingDINO.git
+   cd GroundingDINO
+   pip install -e .
+   ```
+
+   - If you encounter errors, locate the file `_C.cpython-310-x86_64-linux-gnu.so` and move it:
+     ```bash
+     mv _C.cpython-310-x86_64-linux-gnu.so ../Image-to-address/groundingdino/
+     ```
+   - Return to the project folder:
+     ```bash
+     cd ../Image-to-address
+     ```
+
+6. Install Flash Attention (manual installation required):
+   ```bash
+   wget https://github.com/Dao-AILab/flash-attention/releases/download/v2.6.3/flash_attn-2.6.3+cu123torch2.4cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+   pip install --no-dependencies --upgrade flash_attn-2.6.3+cu123torch2.4cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+   ```
+
+7. Install additional Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+---
+
+## ▶️ How to Run
+
+1. Create the following folders in the project directory:
+   ```
+   images_input, images_video, images, crop_images
+   ```
+
+2. Place a GoPro Max video into the `images_video` folder.
+
+3. Run the main script:
+   ```bash
+   python main.py
+   ```
+
+4. Repeat the process:
+   - Organize your data as needed.
+   - Delete all folders and start again from step 1 for processing new videos.
+
+---
+
+## 📬 Contact
+
+For inquiries or support, please reach out to:
+
+- **Anh Bui**  
+  - Email: anhbuiembedded@gmail.com
+  - Call: Anh Bui
+
+- **Jimmy Le**  
+  - Email: namthanhle1907@gmail.com
+  - Call: Jimmy
+
+---
+
+## 🌟 Contributing
+
+Contributions are welcome! Feel free to open issues or submit pull requests to improve the project.
+
+---
+
+## 📄 License
+
+This project is licensed under [Your License Name Here]. See the `LICENSE` file for details.
