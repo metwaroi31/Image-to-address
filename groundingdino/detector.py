@@ -18,7 +18,7 @@ class GroundingDinoDetector:
     def __init__(
             self,
             model,
-            text_prompt = "billboard has text . sign has text",
+            text_prompt = "Billboard contains logo and address .Traffic lights. Traffic signal. Taxi sign. Vacant sign. Street number sign. Prohibition sign. Warning sign. Mandatory sign.  Business signage. Awning business sign contains logo and address. Construction sign. Construction barrier. Advertisement on utility pole. Graffiti . Utility Pole. Street poster. Advertisement poster. Business poster.",
             box_threshold = 0.35,
             text_threshold  = 0.20,
         ) -> None:
@@ -26,6 +26,13 @@ class GroundingDinoDetector:
         self.TEXT_PROMPT = text_prompt
         self.BOX_THRESHOLD = box_threshold
         self.TEXT_THRESHOLD = text_threshold
+        self.KEYWORD_DETECT_BOX = ["business billboard",
+                                   "business signage", 
+                                   "business sign",
+                                   "awning business billboard",
+                                   "awning business sign",
+                                   "awning business signage",
+                                   ]
 
     def predict_billboards(self, image_file, image_exif_data):
         input_file_names = convert_streetview_to_normal_image(image_file, image_exif_data)
@@ -36,7 +43,7 @@ class GroundingDinoDetector:
             image_source, image = load_image(
                 input_file_name
             )
-            boxes, logits, phrases = predict(
+            boxes, _ , logits, phrases = predict(
                 model=self.model,
                 image=image,
                 caption=self.TEXT_PROMPT,
@@ -49,7 +56,9 @@ class GroundingDinoDetector:
             store_sign_images.extend(crop_image(
                 image_source,
                 boxes,
-                input_file_name
+                phrases,
+                input_file_name,
+                keywords = self.KEYWORD_DETECT_BOX
             ))
             annotate(
                 image_source=image_source,
