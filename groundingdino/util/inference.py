@@ -82,7 +82,6 @@ def predict(
 
     if logits.shape[0] == 0:
         return torch.empty(0), torch.empty(0), torch.empty(0), []
-
     
     scores = logits.max(dim=1)[0]
     
@@ -222,8 +221,7 @@ def save_predictions_to_json(image_path,
                              scores,
                              phrases,
                              output_folder):
-    
-    
+        
     """
     Lưu dự đoán bounding box và điểm số thành file JSON.
     """
@@ -231,27 +229,14 @@ def save_predictions_to_json(image_path,
     
     file_name = os.path.basename(image_path).split('.')[0] + "_results.json"
     output_path = os.path.join(output_folder, file_name)
-
-    # # Tạo dictionary kết quả
-    # results = {
-    #     "image_path": image_path,
-    #     "detections": [
-    #         {
-    #             "box": box.tolist() if isinstance(box, torch.Tensor) else box,
-    #             "score": float(score) if isinstance(score, torch.Tensor) else score,
-    #             "label": phrase
-    #         }
-    #         for box, score, phrase in zip(boxes, scores, phrases)
-    #     ]
-    # }
-        # Kiểm tra nếu boxes trống
-    if boxes.numel() == 0:  # Không có box nào
+        
+    if boxes.numel() == 0:  
         results = {
             "image_path": image_path,
-            "detections": []  # Không có box nào
+            "detections": []  
         }
     else:
-        # Tạo dictionary kết quả nếu có boxes
+        
         results = {
             "image_path": image_path,
             "detections": [
