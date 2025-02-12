@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import csv
 from gps_utils.gps_handler import GPSHandler
 from apis.map4d import Map4dSDKClient
@@ -39,45 +40,100 @@ class POIOptimizationProcessor:
             'lon': lon
         }
 
-    
+    def _is_right_of_line(
+            self,
+            route_prev_lat,
+            route_prev_lon,
+            route_current_lat,
+            route_current_lon,
+            poi_lat,
+            poi_lon):
+        # Convert latitudes and longitudes to radians
+        rad_prev_lat, rad_prev_lon = math.radians(route_prev_lat), math.radians(route_prev_lon)
+        rad_current_lat, rad_current_lon = math.radians(route_current_lat), math.radians(route_current_lon)
+        rad_poi_lat, rad_poi_lon = math.radians(poi_lat), math.radians(poi_lon)
+        
+        # Calculate vectors
+        vector_line = (math.cos(rad_current_lat) * math.cos(rad_current_lon) - math.cos(rad_prev_lat) * math.cos(rad_prev_lon),
+                    math.cos(rad_current_lat) * math.sin(rad_current_lon) - math.cos(rad_prev_lat) * math.sin(rad_prev_lon))
+        vector_point = (math.cos(rad_poi_lat) * math.cos(rad_poi_lon) - math.cos(rad_prev_lat) * math.cos(rad_prev_lon),
+                        math.cos(rad_poi_lat) * math.sin(rad_poi_lon) - math.cos(rad_prev_lat) * math.sin(rad_prev_lon))
+        
+        # Calculate the cross product of the vectors
+        cross_product = vector_line[0] * vector_point[1] - vector_line[1] * vector_point[0]
+        
+        # Determine if the point is on the right side of the line
+        return cross_product < 0  # Point is on the right if the cross product is negative
+
     def choose_poi_for_optimizing(
         self
     ):
-        for i in range(len(self.gps_route_list)):
-            source_lat = self.gps_route_list[i]["lat"]
-            source_lon = self.gps_route_list[i]["lon"]
-
-            # Use the average bearing of the current segment
-            current_bearing = self.segment_bearings[i] if i < len(self.segment_bearings) else self.segment_bearings[-1]
+        # TODO:
+        # Rewrite calculate bearing for GPS route 
+        # Then decide bearing for POI GPS
+        for i in range(1, len(self.gps_route_list)):
+            prev_lat = self.gps_route_list[i-1]["lat"]
+            prev_lon = self.gps_route_list[i-1]["lon"]
+            current_lat = self.gps_route_list[i]["lat"]
+            current_lon = self.gps_route_list[i]["lon"]
             result = self.map_api_client.api_search_nearby(
-                source_lat,
-                source_lon
+                current_lat,
+                current_lon,
+                radius=15
             )
             nearby_pois = result['result']
+            distance_route, route_bearing = GPSHandler.haversine_and_bearing(
+                    prev_lat,
+                    prev_lon,
+                    current_lat,
+                    current_lon
+                )
             poi_distance_from_source = {
-                'source_lat': source_lat,
-                'source_lon': source_lon,
+                'source_lat': current_lat,
+                'source_lon': current_lon,
+                'time': self.gps_route_list[i]['time'],
+                'route_bearing': route_bearing,
                 'list_poi': []
             }
+
             for poi in nearby_pois:
                 gps_poi = self._from_result_to_poi_gps(
                     poi
                 )
                 distance, poi_bearing = GPSHandler.haversine_and_bearing(
-                    source_lat,
-                    source_lon,
+                    current_lat,
+                    current_lon,
                     gps_poi['lat'],
                     gps_poi['lon']
                 )
-                print (source_lat, source_lon)
-                print (poi_bearing)
-                if GPSHandler.determine_side(poi_bearing, current_bearing) == 0:
+                if self._is_right_of_line(
+                        prev_lat,
+                        prev_lon,
+                        current_lat,
+                        current_lon,
+                        gps_poi['lat'],
+                        gps_poi['lon']
+                    ) is False:
                     poi_distance_from_source['list_poi'].append({
                         'poi_lat': gps_poi['lat'],
                         'poi_lon': gps_poi['lon'],
+                        'time': self.gps_route_list[i]['time'],
                         'distance': distance,
                         'poi_bearing': poi_bearing
                     })
+            if len(poi_distance_from_source['list_poi']) == 0:
+                # We have to fake poi gps info so that it will work when we choose poi for optimal
+                poi_bearing = (route_bearing + 90) % 360
+                optimal_lat, optimal_lon = GPSHandler.calculate_new_position(
+                    current_lat, current_lon, poi_bearing, 15
+                )
+                poi_distance_from_source['list_poi'].append({
+                    'poi_lat': optimal_lat,
+                    'poi_lon': optimal_lon,
+                    'time': self.gps_route_list[i]['time'],
+                    'distance': 15,
+                    'poi_bearing': poi_bearing
+                })
             self.poi_list_with_distance.append(poi_distance_from_source)
 
     def find_optimal_position(
@@ -85,35 +141,22 @@ class POIOptimizationProcessor:
     ):
         for poi_with_source in self.poi_list_with_distance:
             total_num_pois = len(poi_with_source['list_poi'])
+            optimal_bearing = (poi_with_source['route_bearing'] + 90) % 360
             distance = 0
-            total_bearing = 0
-            min_bearing = 360
             for poi_info in poi_with_source['list_poi']:
-                distance = distance + poi_info['distance']
-                total_bearing = poi_info['poi_bearing']
-            try :
-                average_distance = distance / total_num_pois
-                avg_bearing = total_bearing / total_num_pois
-                optimal_lat, optimal_lon = GPSHandler.calculate_new_position(
-                    poi_with_source['source_lat'], poi_with_source['source_lon'], avg_bearing, average_distance
-                )
-                self.results_for_poi.append({
-                    'lat': poi_with_source['source_lat'],
-                    'lon': poi_with_source['source_lon'],
-                    'poi_lat': optimal_lat,
-                    'poi_lon': optimal_lon
-                })
-            except Exception as error:
-                print (poi_with_source)
-                optimal_lat, optimal_lon = GPSHandler.calculate_new_position(
-                    poi_with_source['source_lat'], poi_with_source['source_lon'], 270, 10
-                )
-                self.results_for_poi.append({
-                    'lat': poi_with_source['source_lat'],
-                    'lon': poi_with_source['source_lon'],
-                    'poi_lat': optimal_lat,
-                    'poi_lon': optimal_lon
-                })
+                    distance = distance + poi_info['distance']
+            average_distance = distance / total_num_pois
+            # avg_bearing = total_bearing / total_num_pois
+            optimal_lat, optimal_lon = GPSHandler.calculate_new_position(
+                poi_with_source['source_lat'], poi_with_source['source_lon'], optimal_bearing, average_distance
+            )
+            self.results_for_poi.append({
+                'lat': poi_with_source['source_lat'],
+                'lon': poi_with_source['source_lon'],
+                'time': poi_with_source['time'],
+                'poi_lat': optimal_lat,
+                'poi_lon': optimal_lon
+            })
         return self.results_for_poi
     
     def optimize_poi_positions(self):
