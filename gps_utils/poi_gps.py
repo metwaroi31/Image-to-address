@@ -128,6 +128,11 @@ class POIProcessor:
         """
         Determine whether the POI is on the left or right side based on the bearing.
         """
+        # TODO: Decide wheter to put the POI based on route_bearing
+        # 90 degree is East
+        # 180 degree is South
+        # 270 degree is West
+        # 360 degree is North
         delta = (poi_bearing - route_bearing + 360) % 360
         return "Right" if 0 <= delta <= 180 else "Left"
 

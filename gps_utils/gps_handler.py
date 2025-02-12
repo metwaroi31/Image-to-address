@@ -11,12 +11,16 @@ class GPSHandler:
     def __init__(self, gpx_file):
         tree = ET.parse(gpx_file)
         root = tree.getroot()
+        namespace = {'ns': 'http://www.topografix.com/GPX/1/0'}
         self.gps_data = []
         self.interpolated_gps_data = []
         self.corrected_gps_data_with_api = []
         self.gps_data_for_frames = []
         self.gps_data_with_geo_coding = []
         self.map_api_client = Map4dSDKClient()
+        self.video_duration = float(root.find('ns:desc', namespace).text)
+        # This should be calculated after interpolated and corrected with API
+        self.path_length = 0
         for elem in root.iter():
             if 'trkpt' in elem.tag:
                 lat = elem.get('lat')
@@ -28,6 +32,12 @@ class GPSHandler:
                     'time': time
                 })
         self.orignal_gps_length = len(self.gps_data)
+        print ("video duration : " + str(self.video_duration))
+    
+    def _calculate_distance(self, lat1 ,lon1, lat2, lon2):
+        coords_1 = (lat1, lon1)
+        coords_2 = (lat2, lon2)
+        return geopy.distance.distance(coords_1, coords_2).meters
     
     @staticmethod
     def calculate_bearing(lat1, lon1, lat2, lon2):
@@ -128,7 +138,8 @@ class GPSHandler:
         self.interpolated_gps_data = [
             {
                 'lat': new_lat[0],
-                'lon': new_lon[0]
+                'lon': new_lon[0],
+                'time': new_times[0]
             }
         ]
         for i in range(1, len(new_lat)):
@@ -137,14 +148,15 @@ class GPSHandler:
             lon_1 = self.interpolated_gps_data[last_gps]['lon']
             lat_2 = new_lat[i]
             lon_2 = new_lon[i]
+            time = new_times[i]
             coords_1 = (lat_1, lon_1)
             coords_2 = (lat_2, lon_2)
-
             distance = geopy.distance.distance(coords_1, coords_2).meters
             if distance < threshold_distance:
                 self.interpolated_gps_data.append({
                     'lat': new_lat[i],
-                    'lon': new_lon[i]
+                    'lon': new_lon[i],
+                    'time': time 
                 })
         return self.interpolated_gps_data
     
@@ -157,8 +169,6 @@ class GPSHandler:
             'Nguyễn Thị Thập',
             'nguyen thi thap'
         ],
-        # district='Quận 7',
-        # city="Thành phố Hồ Chí Minh"
     ):
         for i in range(1, len(self.interpolated_gps_data)):
             start_lat = self.interpolated_gps_data[i - 1]['lat']
@@ -175,6 +185,8 @@ class GPSHandler:
                 data_route['result']['routes'][0]['legs'][0]['steps']
             )
             for coord in coords_route_list:
+                # TODO :
+                # Get coords and interpolate time
                 geo_data = self.map_api_client.api_geo_coding(
                     coord['lat'],
                     coord['lon']
@@ -185,7 +197,9 @@ class GPSHandler:
                 if 'street' in address_component.keys():
                     street_name_checked = address_component['street'] in list_collect_street
                     if street_name_checked:
+                        coord['time'] = self.interpolated_gps_data[i]['time']
                         self.corrected_gps_data_with_api.append(coord)
+        self._calculate_total_path_length()
         return self.corrected_gps_data_with_api
 
     def create_gps_for_frames(
@@ -209,8 +223,43 @@ class GPSHandler:
 
         df = pd.DataFrame(frames, columns=['lat', 'lon'])
         self.gps_data_for_frames = df.to_dict(orient='records')
+        current_seconds = 0
+        average_speed = (self.path_length / self.video_duration) * 1.1
+        for i in range(1, len(self.gps_data_for_frames)):            
+            current_distance = self._calculate_distance(
+                self.gps_data_for_frames[i - 1]['lat'],
+                self.gps_data_for_frames[i - 1]['lon'],
+                self.gps_data_for_frames[i]['lat'],
+                self.gps_data_for_frames[i]['lon']
+            )
+            self.gps_data_for_frames[i - 1]['time'] = current_seconds
+            seconds = current_distance / average_speed 
+            current_seconds = current_seconds + seconds
+            self.gps_data_for_frames[i]['time'] = current_seconds
         return self.gps_data_for_frames
     
+    def _calculate_total_path_length(self):
+        for i in range(1, len(self.corrected_gps_data_with_api)):
+            coords_one = self.corrected_gps_data_with_api[i-1]
+            coords_two = self.corrected_gps_data_with_api[i]
+            distance = geopy.distance.distance(
+                (coords_one['lat'], coords_one['lon']),
+                (coords_two['lat'], coords_two['lon'])
+            ).meters
+            self.path_length = self.path_length + distance
+    
+    def load_coordinates_from_csv(self, csv_file, coords_type):
+        coords_df = pd.read_csv(csv_file)
+        gps_list = []
+        for i, row in coords_df.iterrows():    
+            gps_list.append(row.to_dict())
+        if coords_type == 2:
+            self.corrected_gps_data_with_api = gps_list
+            self._calculate_total_path_length()
+            print('total length : ' + str(self.path_length))
+        elif coords_type == 3:
+            self.gps_data_for_frames = gps_list
+        
     def _parse_address(self, address_component):
         address_data = address_component
         return_json = {}

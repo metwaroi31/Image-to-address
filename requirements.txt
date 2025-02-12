@@ -1,4 +1,4 @@
-transformers==4.45.2
+transformers==4.45.2 # ???
 addict
 yapf
 timm
@@ -34,3 +34,5 @@ Werkzeug==3.0.4
 yarl==1.15.2
 openai
 folium
+geopy
+pandas
