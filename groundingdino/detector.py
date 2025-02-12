@@ -9,7 +9,7 @@ from image_utils.image_processor import (
     convert_streetview_to_normal_image
 )
 import time
-
+import shutil
 
 # This class is to handle configuration
 # And inference to GroundingDino
@@ -34,8 +34,15 @@ class GroundingDinoDetector:
                                    "awning business signage",
                                    ]
 
-    def predict_billboards(self, image_file, image_exif_data):
-        input_file_names = convert_streetview_to_normal_image(image_file, image_exif_data)
+    def predict_billboards(self, image_file, image_exif_data, is_fisheye):
+        input_file_names = None
+        if is_fisheye is True:
+            input_file_names = convert_streetview_to_normal_image(image_file, image_exif_data)
+        else :
+            image_file_name = image_file.split('/')
+            image_file_name = image_file_name[len(image_file_name) - 1]
+            shutil.copy(image_file, "images_input/" + image_file_name)
+            input_file_names = ["images_input/" + image_file_name]
         store_sign_images = []
         for input_file_name in input_file_names:
             print (input_file_name)
