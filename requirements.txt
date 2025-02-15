@@ -35,3 +35,5 @@ rq==1.16.2
 Werkzeug==3.0.4
 yarl==1.15.2
 openai
+pandas
+folium
