@@ -1,34 +1,41 @@
+# Sử dụng CUDA 12.1.1 với Ubuntu 22.04
 FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
 
-# Cài đặt hệ thống
+# Cài đặt hệ thống cần thiết
 RUN apt-get update && apt-get install -y \
     python3 python3-pip python3-venv \
-    opencv-python exiftool ffmpeg \
+    exiftool ffmpeg \
     libgl1 libglib2.0-0 \
-    ninja-build git cmake gcc-11 g++-11
+    libjpeg-dev libpng-dev libtiff-dev \
+    ninja-build git cmake gcc-11 g++-11 \
+    && apt-get clean
 
 # Chọn GCC 11 làm mặc định
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
-RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
-
-# Cấu hình CUDA architecture
-ENV TORCH_CUDA_ARCH_LIST="7.5+PTX"
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
 
 # Đặt thư mục làm việc
 WORKDIR /app
 
-# Copy mã nguồn vào container
+# Tạo môi trường ảo & cập nhật pip
+RUN python3 -m venv env && \
+    /app/env/bin/pip install --upgrade pip setuptools wheel
+
+# Cài đặt PyTorch với CUDA 12.1
+RUN /app/env/bin/pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Clone & Cài đặt GroundingDINO
+WORKDIR /app/groundingdino
+RUN git clone https://github.com/IDEA-Research/GroundingDINO.git . && \
+    /app/env/bin/pip install -e .
+
+# Sao chép toàn bộ mã nguồn vào container
+WORKDIR /app
 COPY . .
 
-# Tạo môi trường ảo và cài thư viện
-RUN python3 -m venv env
-RUN env/bin/pip install --upgrade pip setuptools wheel
-RUN env/bin/pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-RUN python -m ensurepip --default-pip
-RUN cd groundingdino/
-RUN git clone https://github.com/IDEA-Research/GroundingDINO.git
-RUN cd GroundingDINO/
-RUN env/bin/pip install -e .
-RUN cd ..
-RUN cd ..
-RUN env/bin/pip install -r requirements.txt
+# Cài đặt các thư viện từ requirements.txt (SAU CÙNG)
+RUN /app/env/bin/pip install -r requirements.txt
+
+# Chạy lệnh mặc định
+CMD ["env/bin/python", "main.py"]
+
